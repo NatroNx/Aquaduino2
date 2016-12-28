@@ -25,6 +25,7 @@
 // v.2.1.0 - 06.11.2016 - bring the PH/Temp/Co2 to the Web (in progress)
 // v.2.1.1 - 16.11.2016 - PH/TEMP/CO2/Fertilizer and WaterDistance to Webinterface
 // v.2.1.2 - 08.12.2016 - changed rate PH can turn on/off to 15 minutes (from 60 seconds)
+// v.2.1.3 - 28.12.2016 - ported to Sloeber - EclipseIDE (single File, minor changes)
 
 
 //needed Libraries
