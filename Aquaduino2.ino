@@ -29,33 +29,30 @@
 
 
 //needed Libraries
-
+//#include <ctype.h>
+//#include <HardwareSerial.h>
+//#include <stdint.h>
+//#include <stdlib.h>
+//#include <string.h>
+//#include <avr/pgmspace.h>
+//#include <WString.h>
+//#include <pins_arduino.h>
+//#include <Print.h>
 #include <Arduino.h>
-#include <ctype.h>
 #include <DallasTemperature.h> //needed for Temp
-#include <HardwareSerial.h>
 #include <OneWire.h>  //needed for Temp
-#include <pins_arduino.h>
-#include <Print.h>
 #include <RCSwitch.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sx1509_library.h> // Include the SX1509 library
+#include <sx1509_library.h> // Include the SX1509 library (port expander)
 #include <UTFT.h>    //TFT
 #include <UTouch.h> //Touch
 #include <Wire.h>  // Wire.h library is required to use SX1509 lib
-#include <WString.h>
-
-#include "RTClib.h"
-#include "SdFat.h"
-
+#include "RTClib.h"  //real time clock
+#include "SdFat.h"  //SD Card
+#include <tinyFAT.h> // used to acess the SD card
 #define ONE_WIRE_BUS 10 //needed for Temperature
 #include <EEPROM.h>  // used to store and retrieve settings from memory
-#include <tinyFAT.h> // used to acess the SD card
 #include <UTFT_SdRaw.h>  // used to read .raw images from the SD card
-#include <avr/wdt.h>
-#include <avr/pgmspace.h>
+#include <avr/wdt.h> //watchdog
 #include <NewPing.h>  //ultasonic range
 
 #define PING_PIN 18 // Arduino pin for both trig and echo
@@ -315,9 +312,9 @@ unsigned long beepWait = 0;
  */
 
 //days and month char for displaing at the top of screen
-char *dayName[] = { "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag",
+const char *dayName[] = { "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag",
 		"Freitag", "Samstag" };
-char *monthName[] = { "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+const char *monthName[] = { "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
 		"Aug", "Sep", "Oct", "Nov", "Dec" };
 
 const byte light2Pin = 2;
@@ -667,7 +664,7 @@ File Aquaduino;
  doseHour=EEPROM.read(92);
  doseMinute=EEPROM.read(93);
  //tankCleanDay=EEPROM.read(94);
- /*tankCleanMonth=EEPROM.read(95);
+ //tankCleanMonth=EEPROM.read(95);
  co2BottleDay=EEPROM.read(96);
  co2BottleMonth=EEPROM.read(97);
  cleanFilter1Day=EEPROM.read(98);
@@ -6917,7 +6914,7 @@ void parseCommand(String com) {
 	}
 }
 
-int findCommand(const char* searchText) {
+int findCommand(const char *searchText) {
 	int startCount = 0;
 	int foundIndex = -1; // -1 = not found
 	while (startCount < charCount) {
@@ -6931,7 +6928,7 @@ int findCommand(const char* searchText) {
 	return foundIndex;
 }
 
-const char* readProgmem(int input) {
+const char *readProgmem(int input) {
 	char buffer[20];
 	strcpy_P(buffer, (char*) pgm_read_word(&(Char_table[input]))); // Necessary casts and dereferencing, just copy.
 	return buffer;
