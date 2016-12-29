@@ -5440,11 +5440,7 @@ void RemindScreen()
 
     }
 
-/*
- myGLCD.printNumI(printnow.hour(), 140,190,3,48);
- myGLCD.print(F(":"), 430,ty);
- myGLCD.printNumI(printnow.minute(), 445,ty,2,48);
- */
+
 
 void updateRemindScreen()
     {
