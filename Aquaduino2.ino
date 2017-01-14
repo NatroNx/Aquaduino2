@@ -26,6 +26,11 @@
 // v.2.1.1 - 16.11.2016 - PH/TEMP/CO2/Fertilizer and WaterDistance to Webinterface
 // v.2.1.2 - 08.12.2016 - changed rate PH can turn on/off to 15 minutes (from 60 seconds)
 // v.2.1.3 - 28.12.2016 - ported to Sloeber - EclipseIDE (single File, minor changes)
+// v.2.1.4 - 15.01.2016 - minor Tweak in ESP - Arduino Communication  / begin to add Webiterface Funtionality
+
+
+
+
 //#include <ctype.h>
 //#include <HardwareSerial.h>
 //#include <stdint.h>
@@ -150,7 +155,7 @@ const char processRF_Char[] PROGMEM = "pF";
 const char processRel_Char[] PROGMEM = "pR";
 const char processBool_Char[] PROGMEM = "pB";
 const char processPump_Char[] PROGMEM = "pP";
-const char calculatedPWMnF_Char[] PROGMEM = "nP";   //PWM withouth feedback
+const char calculatedPWMnF_Char[] PROGMEM = "nP";   //PWM White without feedback
 const char calculatedRednF_Char[] PROGMEM = "nR";   //red withouth feedback
 const char calculatedGreennF_Char[] PROGMEM = "nG";   //green withouth feedback
 const char calculatedBluenF_Char[] PROGMEM = "nB";   //blue withouth feedback
@@ -1102,7 +1107,7 @@ void setup()
 	}
 
     Serial.begin(57600);
-    Serial2.begin(9600);  //to ESP
+    Serial2.begin(57600);  //to ESP
     Serial.println(F("REBOOT FINISHED"));
 #if debug
 	{
@@ -4175,7 +4180,7 @@ void drawCurve()
 	    //  Serial.println("new LOW");
 	    }
 	else
-	    Serial.println();
+	 //   Serial.println();
 	if (Co2Values[firstIndex])
 	    {
 	    myGLCD.setColor(255, 0, 0);
@@ -7474,7 +7479,7 @@ void useNewData()
 	{
 	String StringFromSerial = "";
 	StringFromSerial = receivedChars;
-	//Serial.println("dbg: "+StringFromSerial);
+	Serial.println("dbgME: "+StringFromSerial);
 	parseCommand(StringFromSerial);
 	ndx = 0;
 	newData = false;
@@ -7535,12 +7540,11 @@ void sendSerial(String sendCom)
 
 void parseCommand(String com)
     {
-    int sentChecksum =
-	    (com.substring(com.indexOf("*") + 1, com.length())).toInt();
+    int sentChecksum = 	    (com.substring(com.indexOf("*") + 1, com.length())).toInt();
     int calculatedCheckSum = com.indexOf("*");
     if (sentChecksum == calculatedCheckSum)
 	{
-	String part1;
+	//String part1;
 	// part1 = com.substring(0, com.indexOf("|"));
 	if (com.substring(0, com.indexOf("|")).equalsIgnoreCase("toMega"))
 	    {
@@ -7553,215 +7557,37 @@ void parseCommand(String com)
 		switch (cmdID)
 		    { //case tPhWert : {PhWert=(part1.substring(part1.indexOf(F("_"))+1,part1.length())).toFloat();  break;}
 		      //case tTemp : {Temp=(part1.substring(part1.indexOf(F("_"))+1,part1.length())).toFloat();    break;}
-		case tcalculatedPWM:
-		    {
-		    calculatedPWM = (part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toFloat();
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(calculatedPWM));
-		    break;
-		    }
-		case tcalculatedRed:
-		    {
-		    calculatedRed = (part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toFloat();
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(calculatedRed));
-		    break;
-		    }
-		case tcalculatedGreen:
-		    {
-		    calculatedGreen =
-			    (part1.substring(part1.indexOf(F("_")) + 1,
-				    part1.length())).toFloat();
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(calculatedGreen));
-		    break;
-		    }
-		case tcalculatedBlue:
-		    {
-		    calculatedBlue = (part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toFloat();
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(calculatedBlue));
-		    break;
-		    }
-		case tTVModeState:
-		    {
-		    if ((part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toInt())
-			{
-			TVMode();
-			}
-		    else
-			{
-			TVModeState = 0;
-			}
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(TVModeState));
-		    break;
-		    }
-		case tcleaningInProcess:
-		    {
-		    if ((part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toInt())
-			{
-			CleanMode();
-			}
-		    else
-			{
-			cleaningInProcess = 0;
-			}
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(cleaningInProcess));
-		    break;
-		    }
-		case tmanualOverride:
-		    {
-		    manualOverride = (part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toInt();
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(manualOverride));
-		    break;
-		    }
-		case tMoonModeState:
-		    {
-		    if ((part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toInt())
-			{
-			MoonMode();
-			}
-		    else
-			{
-			MoonModeState = 0;
-			}
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(MoonModeState));
-		    break;
-		    }
-		case tpump1Value:
-		    {
-		    pump1Value = (part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toInt();
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(pump1Value));
-		    break;
-		    }
-		case tpump2Value:
-		    {
-		    pump2Value = (part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toInt();
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(pump2Value));
-		    break;
-		    }
-		case tlight230Value:
-		    {
-		    light230Value = (part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toInt();
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(light230Value));
-		    break;
-		    }
-		case tlight1Value:
-		    {
-		    light1Value = (part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toInt();
-		    light2Value = light1Value;
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(light1Value));
-		    break;
-		    }
-		    //case tlight2Value : {light2Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(light2Value));break;}
-		case tco2Value:
-		    {
-		    co2Value = (part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toInt();
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(co2Value));
-		    break;
-		    }
-		case theaterValue:
-		    {
-		    heaterValue = (part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toInt();
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(heaterValue));
-		    break;
-		    }
-		    // case tdPump1Value : {dPump1Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(dPump1Value));break;}
-		    //case tdPump2Value : {dPump2Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(dPump2Value));break;}
-		    // case tdPump3Value : {dPump3Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(dPump3Value));break;}
-		case tcoolValue:
-		    {
-		    coolValue = (part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toInt();
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(coolValue));
-		    break;
-		    }
-		    //ase tnow : {rtc.adjust(DateTime);sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(now.unixtime()));break;}
-		case tnow:
-		    {
-		    now = now.unixtime() - now.unixtime()
-			    + (part1.substring(part1.indexOf(F("_")) + 1,
-				    part1.length()).toInt());
-		    rtc.adjust(now.unixtime());
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(now.unixtime()));
-		    break;
-		    }
-		case tpS:
-		    {
-		    UpdateClockAndLight();
-		    break;
-		    }
-		case tpF:
-		    {
-		    processRF();
-		    break;
-		    }
-		case tpR:
-		    {
-		    processRelais();
-		    break;
-		    }
-		case tpB:
-		    {
-		    lightCalculator();
-		    AI();
-		    break;
-		    }
-		case tpP:
-		    {
-		    processPump();
-		    break;
-		    }
-		case tcalculatedPWMnF:
-		    {
-		    calculatedPWM = (part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toFloat();
-		    break;
-		    }
-		case tcalculatedRednF:
-		    {
-		    calculatedRed = (part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toFloat();
-		    break;
-		    }
-		case tcalculatedGreennF:
-		    {
-		    calculatedGreen =
-			    (part1.substring(part1.indexOf(F("_")) + 1,
-				    part1.length())).toFloat();
-		    break;
-		    }
-		case tcalculatedBluenF:
-		    {
-		    calculatedBlue = (part1.substring(part1.indexOf(F("_")) + 1,
-			    part1.length())).toFloat();
-		    break;
-		    }
+		case tcalculatedPWM:{calculatedPWM = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toFloat();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(calculatedPWM));break;}
+		case tcalculatedRed:{calculatedRed = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toFloat();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(calculatedRed));break;}
+		case tcalculatedGreen:{calculatedGreen =(part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toFloat();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(calculatedGreen));break;}
+		case tcalculatedBlue:{calculatedBlue = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toFloat();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(calculatedBlue));break;}
+		case tTVModeState:{if ((part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt()){TVMode();}else{TVModeState = 0;}sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(TVModeState));break;}
+		case tcleaningInProcess:{if ((part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt()){CleanMode();}else{cleaningInProcess = 0;}sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(cleaningInProcess));break;}
+		case tmanualOverride:{manualOverride = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(manualOverride));break;}
+		case tMoonModeState:{if ((part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt()){MoonMode();}else{MoonModeState = 0;}sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(MoonModeState));break;}
+		case tpump1Value:{pump1Value = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(pump1Value));break;}
+		case tpump2Value:{pump2Value = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(pump2Value));break;}
+		case tlight230Value:{light230Value = (part1.substring(part1.indexOf(F("_")) + 1,.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(light230Value));break;}
+		case tlight1Value:{light1Value = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();light2Value = light1Value;sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(light1Value));break;}
+		//case tlight2Value : {light2Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(light2Value));break;}
+		case tco2Value:{co2Value = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(co2Value));break;}
+		case theaterValue:{heaterValue = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(heaterValue));break;}
+		// case tdPump1Value : {dPump1Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(dPump1Value));break;}
+		//case tdPump2Value : {dPump2Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(dPump2Value));break;}
+		// case tdPump3Value : {dPump3Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(dPump3Value));break;}
+		case tcoolValue:{coolValue = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(coolValue));break;}
+		//ase tnow : {rtc.adjust(DateTime);sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(now.unixtime()));break;}
+		case tnow:{now = now.unixtime() - now.unixtime()+ (part1.substring(part1.indexOf(F("_")) + 1,part1.length()).toInt());rtc.adjust(now.unixtime());sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(now.unixtime()));break;}
+		case tpS:{UpdateClockAndLight();break;}
+		case tpF:{processRF();break;}
+		case tpR:{processRelais();break;}
+		case tpB:{lightCalculator();AI();break;}
+		case tpP:{processPump();break;}
+		case tcalculatedPWMnF:{calculatedPWM = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toFloat();break;}
+		case tcalculatedRednF:{calculatedRed = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toFloat();break;}
+		case tcalculatedGreennF:{calculatedGreen =(part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toFloat();break;}
+		case tcalculatedBluenF:{calculatedBlue = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toFloat();break;
+		}
 
 		    }
 
@@ -8017,9 +7843,9 @@ void parseCommand(String com)
 		"updateMe"))
 	    {
 	    parseCommand(
-		    F(
-			    "toESP|pH|tE|tV|cI|mO|mM|cP|cR|cG|cB|p1|p2|lV|l1|l2|cO|hV|d1|d2|d3|cV|nO|*72"));
+		    F("toESP|pH|tE|tV|cI|mO|mM|cP|cR|cG|cB|p1|p2|lV|l1|l2|cO|hV|d1|d2|d3|cV|nO|*72"));
 	    parseCommand(F("toESP|phS|cS|tS|*16"));
+	    drawScreen();   //Only for debugging!!!!!?
 	    }
 	else
 	    {
