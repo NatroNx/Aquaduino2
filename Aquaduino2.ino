@@ -27,7 +27,7 @@
 // v.2.1.2 - 08.12.2016 - changed rate PH can turn on/off to 15 minutes (from 60 seconds)
 // v.2.1.3 - 28.12.2016 - ported to Sloeber - EclipseIDE (single File, minor changes)
 // v.2.1.4 - 15.01.2016 - minor Tweak in ESP - Arduino Communication  / begin to add Webiterface Funtionality
-
+// v.2.1.5 - 16.01.2016 - PowerLight Communicating well - still much work to do
 
 
 
@@ -105,8 +105,8 @@ enum
     tlight2Value,
     tco2Value,
     theaterValue,
-    tdPump1Value,
-    tdPump2Value,
+    tpowLightON,
+    tpowLightOFF,
     tdPump3Value,
     tcoolValue,
     tnow,
@@ -145,8 +145,8 @@ const char light1Value_Char[] PROGMEM = "l1";
 const char light2Value_Char[] PROGMEM = "l2";
 const char co2Value_Char[] PROGMEM = "cO";
 const char heaterValue_Char[] PROGMEM = "hV";
-const char dPump1Value_Char[] PROGMEM = "d1";
-const char dPump2Value_Char[] PROGMEM = "d2";
+const char powLightON_Char[] PROGMEM = "pLON";
+const char powLightOFF_Char[] PROGMEM = "pLOF";
 const char dPump3Value_Char[] PROGMEM = "d3";
 const char coolValue_Char[] PROGMEM = "cV";
 const char now_Char[] PROGMEM = "nO";
@@ -171,7 +171,7 @@ PGM_P const Char_table[] PROGMEM =
     {PhWert_Char, Temp_Char, calculatedPWM_Char, calculatedRed_Char, calculatedGreen_Char, calculatedBlue_Char, TVModeState_Char,
     cleaningInProcess_Char, manualOverride_Char, MoonModeState_Char, pump1Value_Char, pump2Value_Char,
     light230Value_Char, light1Value_Char, light2Value_Char, co2Value_Char, heaterValue_Char,
-    dPump1Value_Char, dPump2Value_Char, dPump3Value_Char, coolValue_Char, now_Char, processSlide_Char, processRF_Char, processRel_Char,
+    powLightON_Char, powLightOFF_Char, dPump3Value_Char, coolValue_Char, now_Char, processSlide_Char, processRF_Char, processRel_Char,
     processBool_Char, processPump_Char, calculatedPWMnF_Char, calculatedRednF_Char, calculatedGreennF_Char, calculatedBluenF_Char, PHValues_Char,
     TempValues_Char, Co2Values_Char, npkFert_Char, nFert_Char, feFert_Char, dst_Char};
 
@@ -7567,13 +7567,13 @@ void parseCommand(String com)
 		case tMoonModeState:{if ((part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt()){MoonMode();}else{MoonModeState = 0;}sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(MoonModeState));break;}
 		case tpump1Value:{pump1Value = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(pump1Value));break;}
 		case tpump2Value:{pump2Value = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(pump2Value));break;}
-		case tlight230Value:{light230Value = (part1.substring(part1.indexOf(F("_")) + 1,.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(light230Value));break;}
+		case tlight230Value:{light230Value = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(light230Value));break;}
 		case tlight1Value:{light1Value = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();light2Value = light1Value;sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(light1Value));break;}
 		//case tlight2Value : {light2Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(light2Value));break;}
 		case tco2Value:{co2Value = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(co2Value));break;}
 		case theaterValue:{heaterValue = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(heaterValue));break;}
-		// case tdPump1Value : {dPump1Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(dPump1Value));break;}
-		//case tdPump2Value : {dPump2Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(dPump2Value));break;}
+		case tpowLightON :{dPump1Value = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(powLightOnHour + ":" + powLightOnMinute));break;}
+		case tpowLightOFF : {dPump2Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(dPump2Value));break;}
 		// case tdPump3Value : {dPump3Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(dPump3Value));break;}
 		case tcoolValue:{coolValue = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(coolValue));break;}
 		//ase tnow : {rtc.adjust(DateTime);sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(now.unixtime()));break;}
@@ -7710,18 +7710,9 @@ void parseCommand(String com)
 			    String(heaterValue));
 		    break;
 		    }
-		case tdPump1Value:
-		    {
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(dPump1Value));
-		    break;
-		    }
-		case tdPump2Value:
-		    {
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(dPump2Value));
-		    break;
-		    }
+		case tpowLightON:{sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(powLightOnHour)+":"+String(powLightOnMinute));break;}
+		case tpowLightOFF: {sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(powLightOffHour)+":"+String(powLightOffMinute)); break;}
+
 		case tdPump3Value:
 		    {
 		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
