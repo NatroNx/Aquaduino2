@@ -107,7 +107,7 @@ enum
     theaterValue,
     tpowLightON,
     tpowLightOFF,
-    tdPump3Value,
+    tpowCO2ON,
     tcoolValue,
     tnow,
     tpS,
@@ -125,7 +125,8 @@ enum
     tnpkFert,
     tnFert,
     tfeFert,
-    tdst
+    tdst,
+    tpowCO2OFF
     };
 
 const char PhWert_Char[] PROGMEM = "pH";
@@ -147,7 +148,7 @@ const char co2Value_Char[] PROGMEM = "cO";
 const char heaterValue_Char[] PROGMEM = "hV";
 const char powLightON_Char[] PROGMEM = "pLON";
 const char powLightOFF_Char[] PROGMEM = "pLOF";
-const char dPump3Value_Char[] PROGMEM = "d3";
+const char powCO2ON_Char[] PROGMEM = "pCON";
 const char coolValue_Char[] PROGMEM = "cV";
 const char now_Char[] PROGMEM = "nO";
 const char processSlide_Char[] PROGMEM = "pS";
@@ -166,14 +167,17 @@ const char npkFert_Char[] PROGMEM = "npkF";
 const char nFert_Char[] PROGMEM = "nF";
 const char feFert_Char[] PROGMEM = "feF";
 const char dst_Char[] PROGMEM = "dst";
+const char powCO2OFF_Char[] PROGMEM = "pCOF";
 
 PGM_P const Char_table[] PROGMEM =
     {PhWert_Char, Temp_Char, calculatedPWM_Char, calculatedRed_Char, calculatedGreen_Char, calculatedBlue_Char, TVModeState_Char,
     cleaningInProcess_Char, manualOverride_Char, MoonModeState_Char, pump1Value_Char, pump2Value_Char,
     light230Value_Char, light1Value_Char, light2Value_Char, co2Value_Char, heaterValue_Char,
-    powLightON_Char, powLightOFF_Char, dPump3Value_Char, coolValue_Char, now_Char, processSlide_Char, processRF_Char, processRel_Char,
+    powLightON_Char, powLightOFF_Char, powCO2ON_Char, coolValue_Char, now_Char, processSlide_Char, processRF_Char, processRel_Char,
     processBool_Char, processPump_Char, calculatedPWMnF_Char, calculatedRednF_Char, calculatedGreennF_Char, calculatedBluenF_Char, PHValues_Char,
-    TempValues_Char, Co2Values_Char, npkFert_Char, nFert_Char, feFert_Char, dst_Char};
+    TempValues_Char, Co2Values_Char, npkFert_Char, nFert_Char, feFert_Char, dst_Char, powCO2OFF_Char
+
+    };
 
 int charCount = sizeof(Char_table) / sizeof(Char_table[0]);
 
@@ -7572,8 +7576,12 @@ void parseCommand(String com)
 		//case tlight2Value : {light2Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(light2Value));break;}
 		case tco2Value:{co2Value = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(co2Value));break;}
 		case theaterValue:{heaterValue = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(heaterValue));break;}
-		case tpowLightON :{dPump1Value = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(powLightOnHour + ":" + powLightOnMinute));break;}
-		case tpowLightOFF : {dPump2Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(dPump2Value));break;}
+		case tpowLightON :{powLightOnMinute  = (part1.substring(part1.indexOf(F("_")) + 1,part1.length()).substring(part1.substring(part1.indexOf(F("_")) + 1,part1.length()).indexOf(F(":")) + 1,part1.substring(part1.indexOf(F("_")) + 1,part1.length()).length())).toInt(); powLightOnHour = (part1.substring(part1.indexOf(F("_")) + 1,part1.length()).substring(0,part1.substring(part1.indexOf(F("_")) + 1,part1.length()).indexOf(F(":")))).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(powLightOnHour)+":"+String(powLightOnMinute));break;}
+		case tpowLightOFF :{powLightOffMinute  = (part1.substring(part1.indexOf(F("_")) + 1,part1.length()).substring(part1.substring(part1.indexOf(F("_")) + 1,part1.length()).indexOf(F(":")) + 1,part1.substring(part1.indexOf(F("_")) + 1,part1.length()).length())).toInt(); powLightOffHour = (part1.substring(part1.indexOf(F("_")) + 1,part1.length()).substring(0,part1.substring(part1.indexOf(F("_")) + 1,part1.length()).indexOf(F(":")))).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(powLightOffHour)+":"+String(powLightOffMinute));break;}
+		case tpowCO2ON :{powCo2OnMinute  = (part1.substring(part1.indexOf(F("_")) + 1,part1.length()).substring(part1.substring(part1.indexOf(F("_")) + 1,part1.length()).indexOf(F(":")) + 1,part1.substring(part1.indexOf(F("_")) + 1,part1.length()).length())).toInt(); powCo2OnHour = (part1.substring(part1.indexOf(F("_")) + 1,part1.length()).substring(0,part1.substring(part1.indexOf(F("_")) + 1,part1.length()).indexOf(F(":")))).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(powCo2OnHour)+":"+String(powCo2OnMinute));break;}
+		case tpowCO2OFF :{powCo2OffMinute  = (part1.substring(part1.indexOf(F("_")) + 1,part1.length()).substring(part1.substring(part1.indexOf(F("_")) + 1,part1.length()).indexOf(F(":")) + 1,part1.substring(part1.indexOf(F("_")) + 1,part1.length()).length())).toInt(); powCo2OffHour = (part1.substring(part1.indexOf(F("_")) + 1,part1.length()).substring(0,part1.substring(part1.indexOf(F("_")) + 1,part1.length()).indexOf(F(":")))).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(powCo2OffHour)+":"+String(powCo2OffMinute));break;}
+
+
 		// case tdPump3Value : {dPump3Value = (part1.substring(part1.indexOf(F("_")) + 1, part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(dPump3Value));break;}
 		case tcoolValue:{coolValue = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toInt();sendCommand(part1.substring(0, part1.indexOf(F("_"))),String(coolValue));break;}
 		//ase tnow : {rtc.adjust(DateTime);sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(now.unixtime()));break;}
@@ -7712,13 +7720,10 @@ void parseCommand(String com)
 		    }
 		case tpowLightON:{sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(powLightOnHour)+":"+String(powLightOnMinute));break;}
 		case tpowLightOFF: {sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(powLightOffHour)+":"+String(powLightOffMinute)); break;}
+		case tpowCO2ON: {sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(powCo2OnHour)+":"+String(powCo2OnMinute)); break;}
+		case tpowCO2OFF: {sendCommand(part1.substring(0, part1.indexOf(F("_"))), String(powCo2OffHour)+":"+String(powCo2OffMinute)); break;}
 
-		case tdPump3Value:
-		    {
-		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
-			    String(dPump3Value));
-		    break;
-		    }
+
 		case tcoolValue:
 		    {
 		    sendCommand(part1.substring(0, part1.indexOf(F("_"))),
