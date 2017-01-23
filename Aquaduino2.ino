@@ -126,7 +126,8 @@ enum
     tnFert,
     tfeFert,
     tdst,
-    tpowCO2OFF
+    tpowCO2OFF,
+    tLightScenes
     };
 
 const char PhWert_Char[] PROGMEM = "pH";
@@ -168,6 +169,7 @@ const char nFert_Char[] PROGMEM = "nF";
 const char feFert_Char[] PROGMEM = "feF";
 const char dst_Char[] PROGMEM = "dst";
 const char powCO2OFF_Char[] PROGMEM = "pCOF";
+const char lightScenes_Char[] PROGMEM = "lSc";
 
 PGM_P const Char_table[] PROGMEM =
     {PhWert_Char, Temp_Char, calculatedPWM_Char, calculatedRed_Char, calculatedGreen_Char, calculatedBlue_Char, TVModeState_Char,
@@ -175,7 +177,7 @@ PGM_P const Char_table[] PROGMEM =
     light230Value_Char, light1Value_Char, light2Value_Char, co2Value_Char, heaterValue_Char,
     powLightON_Char, powLightOFF_Char, powCO2ON_Char, coolValue_Char, now_Char, processSlide_Char, processRF_Char, processRel_Char,
     processBool_Char, processPump_Char, calculatedPWMnF_Char, calculatedRednF_Char, calculatedGreennF_Char, calculatedBluenF_Char, PHValues_Char,
-    TempValues_Char, Co2Values_Char, npkFert_Char, nFert_Char, feFert_Char, dst_Char, powCO2OFF_Char
+    TempValues_Char, Co2Values_Char, npkFert_Char, nFert_Char, feFert_Char, dst_Char, powCO2OFF_Char, lightScenes_Char
 
     };
 
@@ -7483,7 +7485,7 @@ void useNewData()
 	{
 	String StringFromSerial = "";
 	StringFromSerial = receivedChars;
-	Serial.println("dbgME: "+StringFromSerial);
+	//Serial.println("dbgME: "+StringFromSerial);
 	parseCommand(StringFromSerial);
 	ndx = 0;
 	newData = false;
@@ -7595,6 +7597,22 @@ void parseCommand(String com)
 		case tcalculatedRednF:{calculatedRed = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toFloat();break;}
 		case tcalculatedGreennF:{calculatedGreen =(part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toFloat();break;}
 		case tcalculatedBluenF:{calculatedBlue = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toFloat();break;
+
+
+		case tLightScenes:{
+		String inputString=(part1.substring(part1.indexOf(F("_")) + 1,part1.length()));
+		String firstString=inputString.substring(0,inputString.indexOf(F(",")));
+		String secondString=inputString.substring(inputString.indexOf(F(","))+1,inputString.lastIndexOf(F(",")));
+		String thirdString=inputString.substring(inputString.lastIndexOf(F(","))+1,inputString.length());
+		Serial.println(inputString);
+		Serial.println(firstString);
+		Serial.println(secondString);
+		Serial.println(thirdString);
+		//lightPWM[0].Hour = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toFloat();
+		break;
+		}
+
+
 		}
 
 		    }
@@ -7805,6 +7823,31 @@ void parseCommand(String com)
 			}
 		    break;
 		    }
+
+
+
+		case tLightScenes:
+		    {String sendString = "0,"+ String(lightPWM[0].Hour) +":"+  String(lightPWM[0].Minute) + "," + String(lightPWM[0].pwmValue);
+
+			for (int ic = 1; ic < 12; ic++)
+			    {sendString = sendString + ";" + ic +","+ lightPWM[ic].Hour+":"+  lightPWM[ic].Minute + "," + lightPWM[ic].pwmValue;
+
+			    }
+			Serial.println(sendString);
+			sendCommand(part1.substring(0, part1.indexOf(F("_"))),
+				sendString);
+
+		    break;
+		      }
+
+
+
+
+
+
+
+
+
 
 		case tnpkFert:
 		    {
