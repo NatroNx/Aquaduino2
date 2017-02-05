@@ -28,7 +28,8 @@
 // v.2.1.3 - 28.12.2016 - ported to Sloeber - EclipseIDE (single File, minor changes)
 // v.2.1.4 - 15.01.2016 - minor Tweak in ESP - Arduino Communication  / begin to add Webiterface Funtionality
 // v.2.1.5 - 16.01.2016 - PowerLight Communicating well - still much work to do
-
+// v.2.1.6 - 23.01.2016 - PowerLight / Co2 working. Reading and saving LightScenes in progress
+// v.2.1.7 - 05.02.2016 - Sendng More Data via Serial
 
 
 //#include <ctype.h>
@@ -127,7 +128,10 @@ enum
     tfeFert,
     tdst,
     tpowCO2OFF,
-    tLightScenes
+    tLightScenes,
+    tRgbScenes,
+    tfertSettings,
+    treminder
     };
 
 const char PhWert_Char[] PROGMEM = "pH";
@@ -170,6 +174,9 @@ const char feFert_Char[] PROGMEM = "feF";
 const char dst_Char[] PROGMEM = "dst";
 const char powCO2OFF_Char[] PROGMEM = "pCOF";
 const char lightScenes_Char[] PROGMEM = "lSc";
+const char rgbScenes_Char[] PROGMEM = "cSc";
+const char fertSettings_Char[] PROGMEM = "fSe";
+const char reminder_Char[] PROGMEM = "Rem";
 
 PGM_P const Char_table[] PROGMEM =
     {PhWert_Char, Temp_Char, calculatedPWM_Char, calculatedRed_Char, calculatedGreen_Char, calculatedBlue_Char, TVModeState_Char,
@@ -177,7 +184,7 @@ PGM_P const Char_table[] PROGMEM =
     light230Value_Char, light1Value_Char, light2Value_Char, co2Value_Char, heaterValue_Char,
     powLightON_Char, powLightOFF_Char, powCO2ON_Char, coolValue_Char, now_Char, processSlide_Char, processRF_Char, processRel_Char,
     processBool_Char, processPump_Char, calculatedPWMnF_Char, calculatedRednF_Char, calculatedGreennF_Char, calculatedBluenF_Char, PHValues_Char,
-    TempValues_Char, Co2Values_Char, npkFert_Char, nFert_Char, feFert_Char, dst_Char, powCO2OFF_Char, lightScenes_Char
+    TempValues_Char, Co2Values_Char, npkFert_Char, nFert_Char, feFert_Char, dst_Char, powCO2OFF_Char, lightScenes_Char, rgbScenes_Char, fertSettings_Char, reminder_Char
 
     };
 
@@ -1139,7 +1146,7 @@ void setup()
     //Begin I2C - Relais und RTC
     Wire.begin();
     rtc.begin();
-    DateTime now = rtc.now();
+//    DateTime now = rtc.now();				UNCOMMENT
     lastFert = now.unixtime() - 82800;
     sx1509.init();  // Initialize the SX1509, does Wire.begin()
     /**  sx1509.pinDir(pump1Pin, OUTPUT);  // Set SX1509 pin 14 as an output
@@ -5460,6 +5467,11 @@ void updateRemindScreen()
     // myGLCD.printNumI(((now.unixtime()-tankClean.unixtime())/86400), 110,190,3);
     // myGLCD.printNumI(tankCleandDays, 125,190,3);
     //myGLCD.printNumI(((now.unixtime()-tankClean.unixtime())/86400), 105,190,3);
+    if(now.unixtime()<tankClean.unixtime())
+	{
+    tankClean=tankClean.unixtime()-31556926;
+    }
+
     myGLCD.printNumI(((now.unixtime() - tankClean.unixtime()) / 86400), 135,
 	    190, 3);
     myGLCD.setColor(255, 255, 255);
@@ -5468,18 +5480,34 @@ void updateRemindScreen()
     //myGLCD.print("66", 140,274);
     //  myGLCD.printNumI(((now.unixtime()-co2Bottle.unixtime())/1), 130,274,3);
     myGLCD.setColor(219, 0, 170);
+
+    if(now.unixtime()<co2Bottle.unixtime())
+	{
+	co2Bottle=co2Bottle.unixtime()-31556926;
+    }
+
     myGLCD.printNumI(((now.unixtime() - co2Bottle.unixtime()) / 86400), 130,
 	    274, 3);
     myGLCD.setColor(255, 255, 255);
     myGLCD.printNumI(co2BottleDays, 200, 274, 3);
 
     myGLCD.setColor(219, 0, 170);
+    if(now.unixtime()<cleanFilter1.unixtime())
+	{
+	cleanFilter1=cleanFilter1.unixtime()-31556926;
+    }
+
     myGLCD.printNumI(((now.unixtime() - cleanFilter1.unixtime()) / 86400), 130,
 	    358, 3);
     myGLCD.setColor(255, 255, 255);
     myGLCD.printNumI(cleanFilter1Days, 200, 358, 3);
 
     myGLCD.setColor(219, 0, 170);
+    if(now.unixtime()<cleanFilter2.unixtime())
+	{
+	cleanFilter2=cleanFilter2.unixtime()-31556926;
+    }
+
     myGLCD.printNumI(((now.unixtime() - cleanFilter2.unixtime()) / 86400), 130,
 	    442, 3);
     myGLCD.setColor(255, 255, 255);
@@ -6239,7 +6267,7 @@ void processPump() //2 times cause sometimes it doesnt switch
 
 void UpdateClockAndLight()
     {
-    now = rtc.now();
+    //now = rtc.now();			UNCOMMENT
     //calculatedPWM=calculatedPWM+255;
     analogWrite(lightPwmPin, calculatedPWM);
     if (dispScreen != 141 && dispScreen != 142 && dispScreen != 143
@@ -7604,13 +7632,59 @@ void parseCommand(String com)
 		String firstString=inputString.substring(0,inputString.indexOf(F(",")));
 		String secondString=inputString.substring(inputString.indexOf(F(","))+1,inputString.lastIndexOf(F(",")));
 		String thirdString=inputString.substring(inputString.lastIndexOf(F(","))+1,inputString.length());
-		Serial.println(inputString);
-		Serial.println(firstString);
-		Serial.println(secondString);
-		Serial.println(thirdString);
-		//lightPWM[0].Hour = (part1.substring(part1.indexOf(F("_")) + 1,part1.length())).toFloat();
+		lightPWM[firstString.toInt()].Hour=(secondString.substring(0,secondString.indexOf(F(":")))).toInt();
+		lightPWM[firstString.toInt()].Minute=(secondString.substring(secondString.indexOf(F(":"))+1,secondString.length())).toInt();
+		lightPWM[firstString.toInt()].pwmValue=(thirdString).toInt();
+
+
+
 		break;
 		}
+
+
+		case tRgbScenes:{
+		String inputString=(part1.substring(part1.indexOf(F("_")) + 1,part1.length()));
+
+		String firstString=inputString.substring(0,inputString.indexOf(F(",")));
+		String secondString=inputString.substring(inputString.indexOf(F(","))+1,			inputString.indexOf(F(","),inputString.indexOf(F(","))+1));
+		String rgbString=inputString.substring(inputString.indexOf(F(","),inputString.indexOf(F(","))+1)+1,inputString.length());
+
+
+		String thirdString=rgbString.substring(0, rgbString.indexOf(F(",")));
+		String fourthString=rgbString.substring(rgbString.indexOf(F(","))+1,			rgbString.lastIndexOf(F(",")));
+		String fifthString=rgbString.substring(rgbString.lastIndexOf(F(","))+1,rgbString.length());
+
+		lightRGB[firstString.toInt()].Hour=(secondString.substring(0,secondString.indexOf(F(":")))).toInt();
+		lightRGB[firstString.toInt()].Minute=(secondString.substring(secondString.indexOf(F(":"))+1,secondString.length())).toInt();
+		lightRGB[firstString.toInt()].red=(thirdString).toInt();
+		lightRGB[firstString.toInt()].green=(fourthString).toInt();
+		lightRGB[firstString.toInt()].blue=(fifthString).toInt();
+
+
+		break;
+		}
+
+
+		case tfertSettings:{
+//here we get data - later
+		break;
+		}
+
+		case treminder:{
+//here we get data - later
+		break;
+		}
+
+
+
+
+
+
+
+
+
+
+
 
 
 		}
@@ -7833,7 +7907,7 @@ void parseCommand(String com)
 			    {sendString = sendString + ";" + ic +","+ lightPWM[ic].Hour+":"+  lightPWM[ic].Minute + "," + lightPWM[ic].pwmValue;
 
 			    }
-			Serial.println(sendString);
+			//Serial.println(sendString);
 			sendCommand(part1.substring(0, part1.indexOf(F("_"))),
 				sendString);
 
@@ -7841,6 +7915,61 @@ void parseCommand(String com)
 		      }
 
 
+
+
+
+
+		case tRgbScenes:
+		    {String sendString = "0,"+ String(lightRGB[0].Hour) +":"+  String(lightRGB[0].Minute) + "," + String(lightRGB[0].red) + "," + String(lightRGB[0].green) + "," + String(lightRGB[0].blue);
+
+			for (int ic = 1; ic < 12; ic++)
+			    {sendString = sendString + ";" + ic +","+ lightRGB[ic].Hour+":"+  lightRGB[ic].Minute + "," + lightRGB[ic].red  + "," + lightRGB[ic].green + "," + lightRGB[ic].blue;
+
+			    }
+			//Serial.println(sendString);
+			sendCommand(part1.substring(0, part1.indexOf(F("_"))),
+				sendString);
+
+		    break;
+		      }
+
+
+
+
+
+
+
+		case tfertSettings:
+		    {String sendString="";
+		    for (int ic=0; ic<3;ic++){
+			sendString = String(ic)+","+String(FDose[ic])+","+String(FMax[ic])+","+String(FLeft[ic])+","+String(FRate[ic])+","+String(MoF[ic])+","+String(TuF[ic])+","+String(WeF[ic])+","+String(ThF[ic])+","+String(FrF[ic])+","+String(SaF[ic])+","+String(SuF[ic])+","+String(doseHour)+":"+String(doseMinute);
+
+						sendCommand(part1.substring(0, part1.indexOf(F("_"))),sendString);
+		    }
+
+			////Serial.println(sendString);
+			//sendCommand(part1.substring(0, part1.indexOf(F("_"))),sendString);
+
+		    break;
+		      }
+
+
+		case treminder:
+		    {
+		    Serial.println(String(tankClean.day())+"."+String(tankClean.month()));
+		    Serial.println(String(co2Bottle.day())+"."+String(co2Bottle.month()));
+		    Serial.println(String(cleanFilter1.day())+"."+String(cleanFilter1.month()));
+		  Serial.println(String(cleanFilter2.day())+"."+String(cleanFilter2.month()));
+		    Serial.println(tankCleandDays  );
+		    Serial.println(co2BottleDays  );
+		    Serial.println(cleanFilter1Days  );
+		    Serial.println(cleanFilter2Days  );
+
+			////Serial.println(sendString);
+			//sendCommand(part1.substring(0, part1.indexOf(F("_"))),sendString);
+
+		    break;
+		      }
 
 
 
