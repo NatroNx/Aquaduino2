@@ -61,7 +61,7 @@
 #include <NewPing.h>  //ultasonic range
 
 #define PING_PIN 18 // Arduino pin for both trig and echo
-#define debug 0
+#define debug 1
 
 // Declare which fonts we will be using
 extern uint8_t BigFont[];
@@ -131,7 +131,10 @@ enum
     tLightScenes,
     tRgbScenes,
     tfertSettings,
-    treminder
+    treminder,
+    tmodeSettings,
+    tlimits,
+    tCleanSettings
     };
 
 const char PhWert_Char[] PROGMEM = "pH";
@@ -177,6 +180,12 @@ const char lightScenes_Char[] PROGMEM = "lSc";
 const char rgbScenes_Char[] PROGMEM = "cSc";
 const char fertSettings_Char[] PROGMEM = "fSe";
 const char reminder_Char[] PROGMEM = "Rem";
+const char modeSettings_Char[] PROGMEM = "mSe";
+const char limits_Char[] PROGMEM = "Lim";
+const char cleanSettings_Char[] PROGMEM = "cLs";
+
+
+
 
 PGM_P const Char_table[] PROGMEM =
     {PhWert_Char, Temp_Char, calculatedPWM_Char, calculatedRed_Char, calculatedGreen_Char, calculatedBlue_Char, TVModeState_Char,
@@ -184,7 +193,8 @@ PGM_P const Char_table[] PROGMEM =
     light230Value_Char, light1Value_Char, light2Value_Char, co2Value_Char, heaterValue_Char,
     powLightON_Char, powLightOFF_Char, powCO2ON_Char, coolValue_Char, now_Char, processSlide_Char, processRF_Char, processRel_Char,
     processBool_Char, processPump_Char, calculatedPWMnF_Char, calculatedRednF_Char, calculatedGreennF_Char, calculatedBluenF_Char, PHValues_Char,
-    TempValues_Char, Co2Values_Char, npkFert_Char, nFert_Char, feFert_Char, dst_Char, powCO2OFF_Char, lightScenes_Char, rgbScenes_Char, fertSettings_Char, reminder_Char
+    TempValues_Char, Co2Values_Char, npkFert_Char, nFert_Char, feFert_Char, dst_Char, powCO2OFF_Char, lightScenes_Char, rgbScenes_Char, fertSettings_Char,
+    reminder_Char, modeSettings_Char, limits_Char, cleanSettings_Char
 
     };
 
@@ -1146,7 +1156,7 @@ void setup()
     //Begin I2C - Relais und RTC
     Wire.begin();
     rtc.begin();
-//    DateTime now = rtc.now();				UNCOMMENT
+    DateTime now = rtc.now();			//	UNCOMMENT
     lastFert = now.unixtime() - 82800;
     sx1509.init();  // Initialize the SX1509, does Wire.begin()
     /**  sx1509.pinDir(pump1Pin, OUTPUT);  // Set SX1509 pin 14 as an output
@@ -1182,6 +1192,7 @@ void setup()
     readScreenScreen();
     readMoonMode();
     readTVMode();
+    readReminder();
     highestPH = PHUpperLimit;
     lowestPH = PHLowerLimit;
 
@@ -6267,7 +6278,7 @@ void processPump() //2 times cause sometimes it doesnt switch
 
 void UpdateClockAndLight()
     {
-    //now = rtc.now();			UNCOMMENT
+    now = rtc.now();		//	UNCOMMENT
     //calculatedPWM=calculatedPWM+255;
     analogWrite(lightPwmPin, calculatedPWM);
     if (dispScreen != 141 && dispScreen != 142 && dispScreen != 143
@@ -6744,6 +6755,7 @@ void AI()
     else if (!manualOverride && (now.unixtime() >= cleanEnd.unixtime())
 	    && !MoonModeState)
 	{
+
 	cleaningInProcess = false;
 	pump1Value = false;
 	pump2Value = false;
@@ -7237,8 +7249,13 @@ void readPHValue()
 
 void savePHValue()
     {
+
     EEPROM.write(63, (PHUpperLimit - 6) * 100);
-    EEPROM.write(64, (PHUpperLimit - 6) * 100);
+    EEPROM.write(64, (PHLowerLimit - 6) * 100);
+    Serial.println(PHUpperLimit);
+    Serial.println(PHLowerLimit);
+    Serial.println(EEPROM.read(63));
+    Serial.println(EEPROM.read(64));
     }
 
 void readTempValue()
@@ -7646,7 +7663,7 @@ void parseCommand(String com)
 		String inputString=(part1.substring(part1.indexOf(F("_")) + 1,part1.length()));
 
 		String firstString=inputString.substring(0,inputString.indexOf(F(",")));
-		String secondString=inputString.substring(inputString.indexOf(F(","))+1,			inputString.indexOf(F(","),inputString.indexOf(F(","))+1));
+		String secondString=inputString.substring(inputString.indexOf(F(","))+1,inputString.indexOf(F(","),inputString.indexOf(F(","))+1));
 		String rgbString=inputString.substring(inputString.indexOf(F(","),inputString.indexOf(F(","))+1)+1,inputString.length());
 
 
@@ -7666,7 +7683,40 @@ void parseCommand(String com)
 
 
 		case tfertSettings:{
-//here we get data - later
+		String inputString=(part1.substring(part1.indexOf(F("_")) + 1,part1.length()));
+		String firstString=inputString.substring(0,inputString.indexOf(F(",")));
+		String secondString=inputString.substring(inputString.indexOf(F(","))+1,inputString.indexOf(F(","),inputString.indexOf(F(","))+1));
+		String fertilizeString=inputString.substring(inputString.indexOf(F(","),inputString.indexOf(F(","))+1)+1,inputString.length());
+		String thirdString=fertilizeString.substring(0, fertilizeString.indexOf(F(",")));
+		String fourthString=fertilizeString.substring(fertilizeString.indexOf(F(","))+1,			fertilizeString.lastIndexOf(F(",")));
+
+		String timeString=fertilizeString.substring(fertilizeString.lastIndexOf(F(","))+1,fertilizeString.length());
+		doseHour=(timeString.substring(0,timeString.indexOf(F(":")))).toInt();
+		doseMinute=(timeString.substring(timeString.indexOf(F(":"))+1,timeString.length())).toInt();
+
+		//FDose[firstString.toInt()]=secondString
+
+
+
+		//String(FDose[ic])+","+String(FMax[ic])+","+String(FLeft[ic])+","+String(FRate[ic])+","+String(MoF[ic])+","+String(TuF[ic])+","+String(WeF[ic])+","+String(ThF[ic])+","+String(FrF[ic])+","+String(SaF[ic])+","+String(SuF[ic])+","+String(doseHour)+":"+String(doseMinute);
+
+
+
+
+
+		Serial.println("XXXXXX");
+		Serial.println("Received: " + inputString);
+		Serial.println("firstString: " + firstString);
+		Serial.println("secondString: " + secondString);
+		Serial.println("thirdString: " + thirdString);
+		Serial.println("fourthString: " + fourthString);
+
+
+		Serial.println("timeString: " + timeString);
+
+		Serial.println("doseHour: " + doseHour);
+		Serial.println("doseMinute: " + doseMinute);
+
 		break;
 		}
 
@@ -7926,7 +7976,7 @@ void parseCommand(String com)
 			    {sendString = sendString + ";" + ic +","+ lightRGB[ic].Hour+":"+  lightRGB[ic].Minute + "," + lightRGB[ic].red  + "," + lightRGB[ic].green + "," + lightRGB[ic].blue;
 
 			    }
-			//Serial.println(sendString);
+			Serial.println(sendString);
 			sendCommand(part1.substring(0, part1.indexOf(F("_"))),
 				sendString);
 
@@ -7943,33 +7993,64 @@ void parseCommand(String com)
 		    {String sendString="";
 		    for (int ic=0; ic<3;ic++){
 			sendString = String(ic)+","+String(FDose[ic])+","+String(FMax[ic])+","+String(FLeft[ic])+","+String(FRate[ic])+","+String(MoF[ic])+","+String(TuF[ic])+","+String(WeF[ic])+","+String(ThF[ic])+","+String(FrF[ic])+","+String(SaF[ic])+","+String(SuF[ic])+","+String(doseHour)+":"+String(doseMinute);
-
+						Serial.println(sendString);
 						sendCommand(part1.substring(0, part1.indexOf(F("_"))),sendString);
 		    }
 
-			////Serial.println(sendString);
-			//sendCommand(part1.substring(0, part1.indexOf(F("_"))),sendString);
 
 		    break;
 		      }
 
 
 		case treminder:
-		    {
-		    Serial.println(String(tankClean.day())+"."+String(tankClean.month()));
-		    Serial.println(String(co2Bottle.day())+"."+String(co2Bottle.month()));
-		    Serial.println(String(cleanFilter1.day())+"."+String(cleanFilter1.month()));
-		  Serial.println(String(cleanFilter2.day())+"."+String(cleanFilter2.month()));
-		    Serial.println(tankCleandDays  );
-		    Serial.println(co2BottleDays  );
-		    Serial.println(cleanFilter1Days  );
-		    Serial.println(cleanFilter2Days  );
+		    {String sendString=String(tankClean.day())+"."+String(tankClean.month())+","+String(co2Bottle.day())+"."+String(co2Bottle.month())+","+String(cleanFilter1.day())+"."+String(cleanFilter1.month())+","+String(cleanFilter2.day())+"."
+		    +String(cleanFilter2.month())+","+String(tankCleandDays)+","+String(co2BottleDays)+","+String(cleanFilter1Days)+","+String(cleanFilter2Days);
 
-			////Serial.println(sendString);
-			//sendCommand(part1.substring(0, part1.indexOf(F("_"))),sendString);
+
+			//Serial.println(sendString);
+			sendCommand(part1.substring(0, part1.indexOf(F("_"))),sendString);
 
 		    break;
 		      }
+
+
+
+		case tmodeSettings:
+		    {String sendString=String(TVModeBrightness)+","+String(MoonRed)+","+String(MoonGreen)+","+String(MoonBlue)+","+String(MoonMinutes);
+
+
+			//Serial.println(sendString);
+			sendCommand(part1.substring(0, part1.indexOf(F("_"))),sendString);
+
+		    break;
+		      }
+
+
+
+
+		case tlimits:
+		    {String sendString=String(PHUpperLimit)+","+String(PHLowerLimit)+","+String(TempUpperLimit)+","+String(TempLowerLimit);
+
+
+			//Serial.println(sendString);
+			sendCommand(part1.substring(0, part1.indexOf(F("_"))),sendString);
+
+		    break;
+		      }
+
+
+
+
+		case tCleanSettings:
+		    {String sendString=String(pump1Clean)+","+String(pump2Clean)+","+String(light230Clean)+","+String(light2Clean)+","+String(co2Clean)+","+String(heaterClean)+","+String(coolClean)+","+String(cleanMinutes);
+
+
+			//Serial.println(sendString);
+			sendCommand(part1.substring(0, part1.indexOf(F("_"))),sendString);
+
+		    break;
+		      }
+
 
 
 
