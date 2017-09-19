@@ -134,7 +134,8 @@ enum
     treminder,
     tmodeSettings,
     tlimits,
-    tCleanSettings
+    tCleanSettings,
+    tStore
     };
 
 const char PhWert_Char[] PROGMEM = "pH";
@@ -183,6 +184,7 @@ const char reminder_Char[] PROGMEM = "Rem";
 const char modeSettings_Char[] PROGMEM = "mSe";
 const char limits_Char[] PROGMEM = "Lim";
 const char cleanSettings_Char[] PROGMEM = "cLs";
+const char store_Char[] PROGMEM = "str";
 
 
 
@@ -194,7 +196,7 @@ PGM_P const Char_table[] PROGMEM =
     powLightON_Char, powLightOFF_Char, powCO2ON_Char, coolValue_Char, now_Char, processSlide_Char, processRF_Char, processRel_Char,
     processBool_Char, processPump_Char, calculatedPWMnF_Char, calculatedRednF_Char, calculatedGreennF_Char, calculatedBluenF_Char, PHValues_Char,
     TempValues_Char, Co2Values_Char, npkFert_Char, nFert_Char, feFert_Char, dst_Char, powCO2OFF_Char, lightScenes_Char, rgbScenes_Char, fertSettings_Char,
-    reminder_Char, modeSettings_Char, limits_Char, cleanSettings_Char
+    reminder_Char, modeSettings_Char, limits_Char, cleanSettings_Char, store_Char
 
     };
 
@@ -1156,7 +1158,7 @@ void setup()
     //Begin I2C - Relais und RTC
     Wire.begin();
     rtc.begin();
-    DateTime now = rtc.now();			//	UNCOMMENT
+   // DateTime now = rtc.now();				//UNCOMMENT
     lastFert = now.unixtime() - 82800;
     sx1509.init();  // Initialize the SX1509, does Wire.begin()
     /**  sx1509.pinDir(pump1Pin, OUTPUT);  // Set SX1509 pin 14 as an output
@@ -1550,10 +1552,14 @@ void loop()
 		    {
 		    waitForIt(CleanModeCord[0], CleanModeCord[1],
 			    CleanModeCord[2], CleanModeCord[3]);
-		    CleanMode();
+	CleanMode();
+
+
+
+
 		    }
 		else if (((x >= SpeakerCord[0]) && (x <= SpeakerCord[2]))
-			&& ((y >= SpeakerCord[1]) && (y <= SpeakerCord[3]))) // Cleanbutton
+			&& ((y >= SpeakerCord[1]) && (y <= SpeakerCord[3]))) // MuteButton
 		    {
 		    waitForIt(SpeakerCord[0], SpeakerCord[1], SpeakerCord[2],
 			    SpeakerCord[3]);
@@ -1562,6 +1568,64 @@ void loop()
 		    }
 
 		break;
+
+
+
+
+		// Capture Buttons @ Cleanquestion ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	    case 21:
+		if (((x >= BottomButtonCoord[0]) && (x <= BottomButtonCoord[2]))
+					&& ((y >= BottomButtonCoord[1])
+						&& (y <= BottomButtonCoord[3]))) // homebutton
+				    {
+				    waitForIt(BottomButtonCoord[0], BottomButtonCoord[1],
+					    BottomButtonCoord[2], BottomButtonCoord[3]);
+				    dispScreen = 0;
+				    drawScreen();
+				    }
+		else if (((x >= SetPowerSchedCord[0])
+			&& (x <= SetPowerSchedCord[2]))
+			&& ((y >= SetPowerSchedCord[1])
+				&& (y <= SetPowerSchedCord[3]))) // Save
+		    {
+		    waitForIt(SetPowerSchedCord[0], SetPowerSchedCord[1],
+			    SetPowerSchedCord[2], SetPowerSchedCord[3]);
+
+
+
+		    dispScreen=2;
+		    tankClean = now;
+		    saveReminder();
+		    CleanMode();
+
+		    }
+		else if (((x >= CancelPowerSchedCord[0])
+			&& (x <= CancelPowerSchedCord[2]))
+			&& ((y >= CancelPowerSchedCord[1])
+				&& (y <= CancelPowerSchedCord[3]))) // Cancel
+		    {
+		    waitForIt(CancelPowerSchedCord[0], CancelPowerSchedCord[1],
+			    CancelPowerSchedCord[2], CancelPowerSchedCord[3]);
+
+		    dispScreen=2;
+		    CleanMode();
+
+		    }
+
+
+		break;
+
+
+
+
+
+
+
+
+
+
+
+
 
 		// Caputre Buttons @ Settingsscreen ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	    case 3:
@@ -3963,8 +4027,13 @@ void drawScreen()
 	FeedScreen();
 	break;
     case 2:  // power screen
+ // clean Reset Question
 	PowerScreen();
 	break;
+    case 21:
+CleanQuestion();
+	break;
+
     case 3:  // settings screen
 	SettingsScreen();
 	break;
@@ -4701,6 +4770,28 @@ void updatePowerIcons()
     myFiles.load(20, 608, 74, 74, "74Reset.raw");
     myFiles.load(250, 524, 74, 74, "74CleanN.raw"); //Cleanmode
     }
+
+
+
+void CleanQuestion()
+    {
+    myGLCD.setFont(UbuntuBold);
+    myGLCD.setColor(219, 0, 0);
+    myGLCD.print(F("Set Reminder?"), 80, 270);
+    myGLCD.setFont(OCR_A_Extended_M);
+    myGLCD.print(F("(for waterchange)"), 100, 310);
+    myFiles.load(CancelPowerSchedCord[0], CancelPowerSchedCord[1], 168, 52,
+	    "6cancel.raw");
+    myFiles.load(SetPowerSchedCord[0], SetPowerSchedCord[1], 168, 52,
+	    "6set.raw");
+
+
+    }
+
+
+
+
+
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // 3. Settings
@@ -6278,7 +6369,7 @@ void processPump() //2 times cause sometimes it doesnt switch
 
 void UpdateClockAndLight()
     {
-    now = rtc.now();		//	UNCOMMENT
+    // now = rtc.now();		//	UNCOMMENT
     //calculatedPWM=calculatedPWM+255;
     analogWrite(lightPwmPin, calculatedPWM);
     if (dispScreen != 141 && dispScreen != 142 && dispScreen != 143
@@ -6383,8 +6474,12 @@ void MoonMode()
 void CleanMode()
     {
     if (!cleaningInProcess)
-	{
+	{    cleaningInProcess = true;
+	dispScreen=21;
+	    drawScreen();
 	cleanEnd = now.unixtime() + (60 * cleanMinutes);
+	pump1Value = pump1Clean;
+	pump2Value = pump2Clean;
 	}
     beepActive = true;
     lastWaterDistance = waterDistance;
@@ -6392,8 +6487,7 @@ void CleanMode()
     lastWaterDistance = 60;
     cleaningInProcess = true;
     calculatedPWM = 229.5;
-    pump1Value = pump1Clean;
-    pump2Value = pump2Clean;
+
     light230Value = light230Clean;
     light1Value = light2Clean;
     light2Value = light2Clean;
@@ -7684,48 +7778,126 @@ void parseCommand(String com)
 
 		case tfertSettings:{
 		String inputString=(part1.substring(part1.indexOf(F("_")) + 1,part1.length()));
-		String firstString=inputString.substring(0,inputString.indexOf(F(",")));
-		String secondString=inputString.substring(inputString.indexOf(F(","))+1,inputString.indexOf(F(","),inputString.indexOf(F(","))+1));
-		String fertilizeString=inputString.substring(inputString.indexOf(F(","),inputString.indexOf(F(","))+1)+1,inputString.length());
-		String thirdString=fertilizeString.substring(0, fertilizeString.indexOf(F(",")));
-		String fourthString=fertilizeString.substring(fertilizeString.indexOf(F(","))+1,			fertilizeString.lastIndexOf(F(",")));
+		String fertilizerIndex=inputString.substring(0,inputString.indexOf(F(","))); //what was sent? FE,NPK,N?
 
-		String timeString=fertilizeString.substring(fertilizeString.lastIndexOf(F(","))+1,fertilizeString.length());
-		doseHour=(timeString.substring(0,timeString.indexOf(F(":")))).toInt();
-		doseMinute=(timeString.substring(timeString.indexOf(F(":"))+1,timeString.length())).toInt();
+//Serial.println(inputString);
+String fertilizerStrings[12];
+int helpI=0;
+		    for (int icount = inputString.indexOf(F(",")); icount < inputString.lastIndexOf(F(","));   icount = inputString.indexOf(F(","), icount + 1))
+			{
+			  // Serial.println(inputString.indexOf(",", i + 1));
 
-		//FDose[firstString.toInt()]=secondString
+			fertilizerStrings[helpI]=inputString.substring(icount+1, inputString.indexOf(F(","), icount + 1));
+			Serial.println(fertilizerStrings[helpI]);
+			helpI++;
+			}
+		    //fertilizerStrings[helpI]=inputString.substring(inputString.lastIndexOf(","), inputString.length() );
+		    //Serial.println(fertilizerStrings[helpI]);
+		    String timeString=inputString.substring(inputString.lastIndexOf(",")+1, inputString.length())  ;
+		    Serial.println(timeString);
+		    FDose[fertilizerIndex.toInt()]=fertilizerStrings[0].toInt();
+		    FMax[fertilizerIndex.toInt()]=fertilizerStrings[1].toInt();
+		    FLeft[fertilizerIndex.toInt()]=fertilizerStrings[2].toInt();
+		    FRate[fertilizerIndex.toInt()]=fertilizerStrings[3].toInt();
+		    MoF[fertilizerIndex.toInt()]=fertilizerStrings[4].toInt();
+		    TuF[fertilizerIndex.toInt()]=fertilizerStrings[5].toInt();
+		    WeF[fertilizerIndex.toInt()]=fertilizerStrings[6].toInt();
+		    ThF[fertilizerIndex.toInt()]=fertilizerStrings[7].toInt();
+		    FrF[fertilizerIndex.toInt()]=fertilizerStrings[8].toInt();
+		    SaF[fertilizerIndex.toInt()]=fertilizerStrings[9].toInt();
+		    SuF[fertilizerIndex.toInt()]=fertilizerStrings[10].toInt();
 
 
 
-		//String(FDose[ic])+","+String(FMax[ic])+","+String(FLeft[ic])+","+String(FRate[ic])+","+String(MoF[ic])+","+String(TuF[ic])+","+String(WeF[ic])+","+String(ThF[ic])+","+String(FrF[ic])+","+String(SaF[ic])+","+String(SuF[ic])+","+String(doseHour)+":"+String(doseMinute);
+		    doseHour=(timeString.substring(0,timeString.lastIndexOf(F(",")))).toInt();
+		    doseMinute=(timeString.substring(timeString.lastIndexOf(F(","))+1, timeString.length())).toInt();
+		   // Serial.println(String(doseHour) + ":" + String(doseMinute));
+		    //sendString = String(ic)+","+String(FDose[ic])+","+String(FMax[ic])+","+String(FLeft[ic])+","+String(FRate[ic])+","+String(MoF[ic])+","+String(TuF[ic])+","+String(WeF[ic])+","+String(ThF[ic])+","+String(FrF[ic])+","+String(SaF[ic])+","+String(SuF[ic])+","+String(doseHour)+":"+String(doseMinute);
 
 
 
 
 
-		Serial.println("XXXXXX");
-		Serial.println("Received: " + inputString);
-		Serial.println("firstString: " + firstString);
-		Serial.println("secondString: " + secondString);
-		Serial.println("thirdString: " + thirdString);
-		Serial.println("fourthString: " + fourthString);
 
-
-		Serial.println("timeString: " + timeString);
-
-		Serial.println("doseHour: " + doseHour);
-		Serial.println("doseMinute: " + doseMinute);
 
 		break;
 		}
 
 		case treminder:{
-//here we get data - later
+		String inputString=(part1.substring(part1.indexOf(F("_")) + 1,part1.length()));
+		const int numberOfPieces = 4;
+		String pieces[numberOfPieces];
+
+		int counter = 0;
+		int lastIndex = 0;
+
+		Serial.println("REMINDER: " +inputString);
+
+		  for (int i = 0; i < inputString.length(); i++) {
+		        // Loop through each character and check if it's a comma
+		        if (inputString.substring(i, i+1) == ",") {
+		        	// Grab the piece from the last index up to the current position and store it
+		        	pieces[counter] = inputString.substring(lastIndex, i);
+		        	// Update the last position and add 1, so it starts from the next character
+		        	lastIndex = i + 1;
+		        	// Increase the position in the array that we store into
+		        	counter++;
+		        }
+
+		        // If we're at the end of the string (no more commas to stop us)
+		        if (i == inputString.length() - 1) {
+		          // Grab the last part of the string from the lastIndex to the end
+		          pieces[counter] = inputString.substring(lastIndex, i);
+		        }
+		      }
+
+
+
+		  Serial.println(now.unixtime());
+
+		 // Serial.println((pieces[0]).toInt());
+		 // Serial.println(now.unixtime()/86400L);
+		 // Serial.println(tankClean.unixtime()/86400L);
+		  Serial.println(abs(now.unixtime()/86400L-tankClean.unixtime()/86400L));
+		  if((pieces[0]).toInt()!=abs(now.unixtime()/86400L-tankClean.unixtime()/86400L))
+		      {
+			    tankCleandDays = (now.unixtime() - tankClean.unixtime()) / 86400;
+			    tankClean = now.unixtime()/86400L-(pieces[0]).toInt();
+			    Serial.println(tankCleandDays);
+			    Serial.println(tankClean.unixtime());
+		      }
+
+		  //Serial.println((pieces[0]).toInt()*86400);
+		  /**
+		    tankCleandDays = (now.unixtime() - tankClean.unixtime())
+			    / 86400;
+		    tankClean = now;
+**/
+
+
+
+
 		break;
 		}
 
 
+		case tStore:{ //store everything in persistant Storage
+
+
+		saveLightPWM();
+		// saveMoonMode();
+		// saveTVMode();
+		 saveLightRGB();
+		// saveCleanSched();
+		// savePHValue();
+		// saveTempValue();
+		 saveFerti();
+		// saveReminder();
+		 savePowerSchedule();
+		// saveScreenScreen();
+
+		break;
+		}
 
 
 
