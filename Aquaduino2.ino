@@ -61,7 +61,7 @@
 #include <NewPing.h>  //ultasonic range
 
 #define PING_PIN 18 // Arduino pin for both trig and echo
-#define debug 1
+#define debug 0
 
 // Declare which fonts we will be using
 extern uint8_t BigFont[];
@@ -1158,7 +1158,7 @@ void setup()
     //Begin I2C - Relais und RTC
     Wire.begin();
     rtc.begin();
-   // DateTime now = rtc.now();				//UNCOMMENT
+    DateTime now = rtc.now();				//UNCOMMENT
     lastFert = now.unixtime() - 82800;
     sx1509.init();  // Initialize the SX1509, does Wire.begin()
     /**  sx1509.pinDir(pump1Pin, OUTPUT);  // Set SX1509 pin 14 as an output
@@ -6369,7 +6369,7 @@ void processPump() //2 times cause sometimes it doesnt switch
 
 void UpdateClockAndLight()
     {
-    // now = rtc.now();		//	UNCOMMENT
+    now = rtc.now();		//	UNCOMMENT
     //calculatedPWM=calculatedPWM+255;
     analogWrite(lightPwmPin, calculatedPWM);
     if (dispScreen != 141 && dispScreen != 142 && dispScreen != 143
@@ -7788,13 +7788,13 @@ int helpI=0;
 			  // Serial.println(inputString.indexOf(",", i + 1));
 
 			fertilizerStrings[helpI]=inputString.substring(icount+1, inputString.indexOf(F(","), icount + 1));
-			Serial.println(fertilizerStrings[helpI]);
+			//Serial.println(fertilizerStrings[helpI]);
 			helpI++;
 			}
 		    //fertilizerStrings[helpI]=inputString.substring(inputString.lastIndexOf(","), inputString.length() );
 		    //Serial.println(fertilizerStrings[helpI]);
 		    String timeString=inputString.substring(inputString.lastIndexOf(",")+1, inputString.length())  ;
-		    Serial.println(timeString);
+		    //Serial.println(timeString);
 		    FDose[fertilizerIndex.toInt()]=fertilizerStrings[0].toInt();
 		    FMax[fertilizerIndex.toInt()]=fertilizerStrings[1].toInt();
 		    FLeft[fertilizerIndex.toInt()]=fertilizerStrings[2].toInt();
@@ -7831,7 +7831,7 @@ int helpI=0;
 		int counter = 0;
 		int lastIndex = 0;
 
-		Serial.println("REMINDER: " +inputString);
+		//Serial.println("REMINDER: " +inputString);
 
 		  for (int i = 0; i < inputString.length(); i++) {
 		        // Loop through each character and check if it's a comma
@@ -7852,19 +7852,28 @@ int helpI=0;
 		      }
 
 
-
-		  Serial.println(now.unixtime());
-
-		 // Serial.println((pieces[0]).toInt());
-		 // Serial.println(now.unixtime()/86400L);
-		 // Serial.println(tankClean.unixtime()/86400L);
-		  Serial.println(abs(now.unixtime()/86400L-tankClean.unixtime()/86400L));
 		  if((pieces[0]).toInt()!=abs(now.unixtime()/86400L-tankClean.unixtime()/86400L))
-		      {
-			    tankCleandDays = (now.unixtime() - tankClean.unixtime()) / 86400;
-			    tankClean = now.unixtime()/86400L-(pieces[0]).toInt();
-			    Serial.println(tankCleandDays);
-			    Serial.println(tankClean.unixtime());
+		      {	 //   Serial.println("0");
+		      tankCleandDays = (now.unixtime() - tankClean.unixtime()) / 86400; // convert the current time in the last time (days)
+			    tankClean = now - TimeSpan((pieces[0]).toInt(),0,0,0); //subtract the new value from now
+		      }
+
+		  if((pieces[1]).toInt()!=abs(now.unixtime()/86400L-co2Bottle.unixtime()/86400L))
+		      {//	 Serial.println("1");
+		      co2BottleDays = (now.unixtime() - co2Bottle.unixtime()) / 86400; // convert the current time in the last time (days)
+			      co2Bottle = now - TimeSpan((pieces[1]).toInt(),0,0,0); //subtract the new value from now
+		      }
+
+		  if((pieces[2]).toInt()!=abs(now.unixtime()/86400L-cleanFilter1.unixtime()/86400L))
+		      {	  //  Serial.println("2");
+		      cleanFilter1Days = (now.unixtime() - cleanFilter1.unixtime()) / 86400; // convert the current time in the last time (days)
+		      cleanFilter1 = now - TimeSpan((pieces[2]).toInt(),0,0,0); //subtract the new value from now
+		      }
+
+		  if((pieces[3]).toInt()!=abs(now.unixtime()/86400L-cleanFilter2.unixtime()/86400L))
+		      {//	Serial.println("3");
+		      cleanFilter2Days = (now.unixtime() - cleanFilter2.unixtime()) / 86400; // convert the current time in the last time (days)
+		      cleanFilter2 = now - TimeSpan((pieces[3]).toInt(),0,0,0); //subtract the new value from now
 		      }
 
 		  //Serial.println((pieces[0]).toInt()*86400);
@@ -8148,7 +8157,7 @@ int helpI=0;
 			    {sendString = sendString + ";" + ic +","+ lightRGB[ic].Hour+":"+  lightRGB[ic].Minute + "," + lightRGB[ic].red  + "," + lightRGB[ic].green + "," + lightRGB[ic].blue;
 
 			    }
-			Serial.println(sendString);
+			//Serial.println(sendString);
 			sendCommand(part1.substring(0, part1.indexOf(F("_"))),
 				sendString);
 
@@ -8165,7 +8174,7 @@ int helpI=0;
 		    {String sendString="";
 		    for (int ic=0; ic<3;ic++){
 			sendString = String(ic)+","+String(FDose[ic])+","+String(FMax[ic])+","+String(FLeft[ic])+","+String(FRate[ic])+","+String(MoF[ic])+","+String(TuF[ic])+","+String(WeF[ic])+","+String(ThF[ic])+","+String(FrF[ic])+","+String(SaF[ic])+","+String(SuF[ic])+","+String(doseHour)+":"+String(doseMinute);
-						Serial.println(sendString);
+					//	Serial.println(sendString);
 						sendCommand(part1.substring(0, part1.indexOf(F("_"))),sendString);
 		    }
 
