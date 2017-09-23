@@ -30,7 +30,7 @@
 // v.2.1.5 - 16.01.2016 - PowerLight Communicating well - still much work to do
 // v.2.1.6 - 23.01.2016 - PowerLight / Co2 working. Reading and saving LightScenes in progress
 // v.2.1.7 - 05.02.2016 - Sendng More Data via Serial
-
+// v.2.2.0 - 23.09.2017 - Send and Recive everything (important) via Serial - Done
 
 //#include <ctype.h>
 //#include <HardwareSerial.h>
@@ -7901,7 +7901,7 @@ int helpI=0;
 		// savePHValue();
 		// saveTempValue();
 		 saveFerti();
-		// saveReminder();
+		 saveReminder();
 		 savePowerSchedule();
 		// saveScreenScreen();
 
