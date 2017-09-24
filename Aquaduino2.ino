@@ -31,6 +31,8 @@
 // v.2.1.6 - 23.01.2016 - PowerLight / Co2 working. Reading and saving LightScenes in progress
 // v.2.1.7 - 05.02.2016 - Sendng More Data via Serial
 // v.2.2.0 - 23.09.2017 - Send and Recive everything (important) via Serial - Done
+// v.2.2.1 - 24.09.2017 - bugfix
+
 
 //#include <ctype.h>
 //#include <HardwareSerial.h>
@@ -7808,11 +7810,11 @@ int helpI=0;
 		    SuF[fertilizerIndex.toInt()]=fertilizerStrings[10].toInt();
 
 
-
-		    doseHour=(timeString.substring(0,timeString.lastIndexOf(F(",")))).toInt();
-		    doseMinute=(timeString.substring(timeString.lastIndexOf(F(","))+1, timeString.length())).toInt();
-		   // Serial.println(String(doseHour) + ":" + String(doseMinute));
-		    //sendString = String(ic)+","+String(FDose[ic])+","+String(FMax[ic])+","+String(FLeft[ic])+","+String(FRate[ic])+","+String(MoF[ic])+","+String(TuF[ic])+","+String(WeF[ic])+","+String(ThF[ic])+","+String(FrF[ic])+","+String(SaF[ic])+","+String(SuF[ic])+","+String(doseHour)+":"+String(doseMinute);
+//Serial.println(timeString);
+		    doseHour=(timeString.substring(0,timeString.lastIndexOf(F(":")))).toInt();
+		    doseMinute=(timeString.substring(timeString.lastIndexOf(F(":"))+1, timeString.length())).toInt();
+		  //  Serial.println(String(doseHour) + ":" + String(doseMinute));
+		    //sendString = String(ic)+","+String(FDose[ic])+","+String(FMax[ic])+","+String(FLeft[ic])+","+String(FRate[ic])+","+String(MoF[ic])+","+String(TuF[ic])+","+String(WeF[ic])+","+String(ThF[ic])+","+String(FrF[ic])+","+String(SaF[ic])+","+String(SuF[ic])+","+String()+":"+String(doseMinute);
 
 
 
