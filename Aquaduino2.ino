@@ -414,7 +414,7 @@ const char *monthName[] =
 	    "Dec"
     };
 
-const byte light2Pin = 2;
+const byte light2Pin = 1;
 const byte light1Pin = 11; //not active
 const byte dPump2Pin = 6;
 const byte dPump1Pin = 7;
